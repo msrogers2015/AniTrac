@@ -32,15 +32,15 @@ class App:
         self.notebook.pack(expand=1, fill='both')
         # Create frames to hold widgets for each tab.
         self.dashboard_frame = ttk.Frame(self.notebook)
-        record_frame = ttk.Frame(self.notebook)
+        self.record_frame = ttk.Frame(self.notebook)
         settings_frame = ttk.Frame(self.notebook)
         # Create local instances for gui
         self.dashboard_gui = dashboard.Dashboard(self.dashboard_frame, self.width)
-        record_gui = record.Record(record_frame)
+        self.record_gui = record.Record(self.record_frame)
         settings_gui = settings.Settings(settings_frame)
         # Create tabs to navigate the different sub-windows
         self.notebook.add(self.dashboard_frame, text='Dashboard')
-        self.notebook.add(record_frame, text='Record')
+        self.notebook.add(self.record_frame, text='Record')
         self.notebook.add(settings_frame, text='Settings')
         # Bind tab changing event to various functionalities. 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
