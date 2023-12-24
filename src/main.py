@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from gui import dashboard, settings, record
+from frames import dashboard, settings, record
 
 class App:
     def __init__(self) -> None:
@@ -45,7 +45,7 @@ class App:
         # Bind tab changing event to various functionalities. 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
-    def on_tab_changed(self, event):
+    def on_tab_changed(self, event) -> None:
         '''Actions to be taken when tab change event happens.'''
         # If the index of the tab is one, update the table data in the
         # dashboard
