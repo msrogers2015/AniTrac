@@ -1,4 +1,4 @@
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import os
 import json
 import sqlite3
@@ -27,7 +27,37 @@ class Dashboard:
         clean_btn.place(x=(width-300)/2, y=315, width=300, height=45)
     
     def clean(self):
-        pass
+        '''Reset the mileage for anilox rollers that have been cleaned.'''
+        # Get the current selection via focus method. From there, get the
+        # record information via the item method for tkitner treeview. Lastly,
+        # strip out just the values from the dict.
+        anilox = self.table.item(self.table.focus())['values'][0]
+        # Confirm the user wants to reset the mileage for the selected anilox
+        flag = messagebox.askokcancel(
+            title='Clean Anilox?',
+            message=f'Are you sure you want to reset milage for' \
+                f' roller {anilox}?'
+        )
+        # If flag is true, reset mileage for anilox roller.
+        if flag:
+            # Run cleaning function. If true, display confirmation.
+            cleaned = self.sql.clean_anilox(anilox)
+            if cleaned:
+                messagebox.showinfo(
+                    title='Mileage Cleared',
+                    message=f'Mileage for roller {anilox} has been reset.'
+                )
+            else:
+                messagebox.showerror(
+                    title='Error Clearing Mileage',
+                    message=f'The following error occured:\n\n{flag}'
+                )
+        # If flag is false, do nothing. A false flag means the user clicked
+        # cancel
+        elif flag == False:
+            pass
+        # Update the table
+        self.update_table()
 
     def load_json(self) -> None:
         """Create variables based on the config file."""
@@ -110,9 +140,12 @@ class Dashboard:
         # Create a counter to alternate record background colros
         count = 0
         # Loop through records in database
-        for record in records:
+        for original_record in records:
+            # Break down the tuple to convert to list and format the mileage
+            anilox, lpi, bcm, mileage = original_record
+            record = [anilox, lpi,bcm, '{:,}'.format(mileage)]
             # Check if record is above the specified limit
-            if record[3] > self.limit:
+            if mileage > self.limit:
                 self.table.insert(
                     parent="",
                     index="end",
@@ -122,7 +155,7 @@ class Dashboard:
                 )
             # If record isn't above the limit, check if the record is over 80%
             # towards the limit.
-            elif record[3] > (self.limit * 0.8):
+            elif mileage > (self.limit * 0.8):
                 self.table.insert(
                     parent="",
                     index="end",
@@ -189,3 +222,22 @@ class SQL:
         self.disconnect()
         # Return data list for the parent function to use.
         return data
+    
+    def clean_anilox(self, roller) -> bool or str:
+        '''Reset milage for anilox after being cleaned.'''
+        # Create sql statement
+        sql = '''UPDATE anilox SET milage = 0 WHERE roller = ?'''
+        # Connect to database
+        self.connect()
+        try:
+            # Reset milage
+            self.cur.execute(sql, (roller,))
+        # Catch exception and return information to the end user
+        except Exception as e:
+            self.disconnect()
+            return str(e)
+        # If no errors, save changed to the databse and disconnect. Return True
+        # for the flag. 
+        self.con.commit()
+        self.disconnect()
+        return True

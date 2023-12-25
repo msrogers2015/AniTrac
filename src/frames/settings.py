@@ -12,7 +12,7 @@ class Settings:
         self.sql = SQL()
         self.create_window()
 
-    def create_window(self):
+    def create_window(self) -> None:
         '''Create and place widgets within frame'''
         # Create cooridnate lists
         x = [33, 317]
@@ -22,15 +22,24 @@ class Settings:
                   'Set Parameters', 'Visual Apperance', 'Anilox Report']
         functions = [self.load_anilox, self.new_anilox, self.delete_anilox,
                      self.update_params, self.change_apperance, self.report]
+        # Create a counter to select label and function from list
         count = 0
+        # Create a list to place the buttons into. 
         self.buttons = []
+        # Loop through the y coordinates
         for y_pos in y:
+            # Loop through the x coorinate to create an x,y location pair
             for x_pos in x:
+                # Create a new button with the label and fucntion from the list
                 new_btn = ttk.Button(
                     self.frame, text=labels[count], command=functions[count]
                 )
+                # Place button based on the x,y coordinate pair
                 new_btn.place(x=x_pos, y=y_pos, width=250, height=50)
+                # Increase counter to progress through the lists.
                 count += 1
+                # Add button to the button list. 
+                self.buttons.append(new_btn)
     
     def load_anilox(self) -> None:
         '''Load an entire list of anilox into database via CSV files.'''
@@ -79,9 +88,24 @@ class Settings:
                 message=message
             )
 
-    def new_anilox(self) -> None:
-        print('New Anilox')
+    def disable_buttons(self) -> None:
+        '''Disable all buttons to prevent bugs.'''
+        # Disable all buttons so other windows cannot be opened.
+        for button in self.buttons:
+            button.config(state='disable')
 
+    def enable_buttons(self) -> None:
+        '''Enable all buttons to return normal functionality.'''
+        # Enable all buttons to resume normal functionality.
+        for button in self.buttons:
+            button.config(state='enable')
+
+    def new_anilox(self) -> None:
+        '''Add a new anilox to the list.'''
+        # Disable all buttons so other windows cannot be opened.
+        self.disable_buttons()
+        self.toplevel = Anilox('New Anilox', self.enable_buttons)
+        
     def delete_anilox(self) -> None:
         print('Delete anilox')
 
@@ -133,3 +157,104 @@ class SQL:
         self.con.commit()
         self.disconnect()
         return True
+
+class Anilox:
+    def __init__(self, title, buttons) -> None:
+        '''Create a top level window to interact with anilox.'''
+        # Create window
+        self.root = tk.Tk()
+        # Create an instance of the sql class
+        self.sql = SQL()
+        # Update window title
+        self.root.title(title)
+        # Create a local function to enable buttons from the settings frame.
+        self.enable_buttons = buttons
+        # Create location variables
+        x = int(self.root.winfo_screenwidth()/2 - 150)
+        y = int(self.root.winfo_screenheight()/2 - 100)
+        # Resize window
+        self.root.geometry(f'300x200+{x}+{y}')
+        # Update on close protocol so the setting buttons are also re-enabled.
+        self.root.protocol('WM_DELETE_WINDOW', self.on_close)
+        # Set style
+        self.set_style()
+        # Create and place widets in the window
+        self.create_window()
+
+    def set_style(self) -> None:
+        '''Update styling for the window.'''
+        # Create a instance of the style class
+        style = ttk.Style(self.root)
+        # Change font size
+        style.configure('.', font=(None, 14))
+
+    def create_window(self) -> None:
+        '''Create and place all widgets for the window'''
+        # Create a list of items to be created
+        widgets = ['Anilox','LPI','BCM']
+        # List of size variables
+        width = [75, 200, 150]
+        height = 30
+        # List of coordinates
+        x = [10, 75]
+        y = [10, 45, 80]
+        self.entries = []
+        # Loop through list to create labels and entries. Enumerate to get
+        # numeric indices
+        for index, value in enumerate(widgets):
+            # Create and place the labels
+            label = ttk.Label(self.root, text=value).place(
+                x=x[0], y=y[index], width=width[0], height=height)
+            # Create the entry box and increase the font size to 14 pt
+            entry = ttk.Entry(self.root, font=(None, 14))
+            # Place the entry box
+            entry.place(x=x[1], y=y[index], width=width[1], height=height)
+            # Add the entry to the list of entries.
+            self.entries.append(entry)
+        # Create button to add anilox to database
+        add_btn = ttk.Button(
+            self.root, text='Add Anilox',
+            command=self.add_anilox)
+        # Place add button widget
+        add_btn.place(x=75, y=130, width=150, height=height)
+
+    def add_anilox(self) -> None:
+        '''Handler for adding anilox to records.'''
+        # Create list of values from inforamtion in entry widtes
+        data = [x.get() for x in self.entries]
+        # If there is no blank spaces in data list, add record to database
+        if '' not in data:
+            # Create variables from the values in the entry widgets
+            roller, lpi, bcm = data
+            # Create a flag to control what happens after attempting to add
+            # anilox to database
+            flag = self.sql.add_anilox(roller, lpi, bcm)
+            if flag:
+                # If added succesfully, display confiramtion and close window.
+                messagebox.showinfo(
+                    title='Anilox Added.',
+                    message=f'Anilox {self.entries[0].get()} successfully added.'
+                )
+                self.on_close()
+        else:
+            # Else, display error message and close window. 
+            messagebox.showerror(
+                title='Anilox Addition Failed',
+                message='Failed to add anilox to the database.'
+            )
+            self.on_close()
+
+    def on_close(self) -> None:
+        '''Actions to be taken when the close button is pressed.'''
+        try:
+            # Try to enable buttons and destory window
+            self.enable_buttons()
+            self.root.destroy()
+        except Exception:
+            # In the event the application was closed first, continue to
+            # Destory this window. 
+            self.root.destroy()
+
+class Delete:
+    def __init__(self) -> None:
+        pass
