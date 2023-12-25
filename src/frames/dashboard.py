@@ -14,7 +14,20 @@ class Dashboard:
         # Load variables from config file
         self.load_json()
         self.create_table(width)
+        self.create_buttons(width)
         self.style_table()
+
+    def create_buttons(self, width):
+        '''Create buttons for the dashboard to clean anilox rollers.'''
+        # Create clean button
+        clean_btn = ttk.Button(
+            self.frame, text='Clean Anilox', command=self.clean
+        )
+        # Place clean button
+        clean_btn.place(x=(width-300)/2, y=315, width=300, height=45)
+    
+    def clean(self):
+        pass
 
     def load_json(self) -> None:
         """Create variables based on the config file."""
