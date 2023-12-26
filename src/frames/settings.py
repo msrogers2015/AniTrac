@@ -1,5 +1,6 @@
 import tkinter as tk
 import os
+import json
 import sqlite3
 from tkinter import ttk, filedialog, messagebox
 from ttkwidgets.autocomplete import AutocompleteCombobox
@@ -114,7 +115,10 @@ class Settings:
         self.toplevel = Delete(self.enable_buttons)
 
     def update_params(self) -> None:
-        print('Update parameters')
+        '''Change system defaults based on end user need.'''
+        # Disable all buttons so the other windows cannot be opened.
+        self.disable_buttons()
+        self.toplevel = Parameters(self.enable_buttons)
 
     def import_data(self) -> None:
         print('Change look r')
@@ -324,8 +328,8 @@ class Delete:
     def create_window(self) -> None:
         '''Create and place all widgets for the window.'''
         # Create and place label 
-        self.anilox = ttk.Label(self.root, text='Select Anilox')
-        self.anilox.place(x=10, y=10, width=125, heigh=30)
+        anilox = ttk.Label(self.root, text='Select Anilox').place(
+            x=10, y=10, width=125, heigh=30)
         # Create drop down list for anilox selection
         self.anilox_list = AutocompleteCombobox(
             self.root, font=(None, 14),
@@ -372,3 +376,123 @@ class Delete:
             # Destory this window. 
             self.root.destroy()
 
+class Parameters:
+    def __init__(self, buttons) -> None:
+        '''Create a top level window to remove anilox from database.'''
+        # Create windwo
+        self.root = tk.Tk()
+        # Create an instance of the sql class
+        self.sql = SQL()
+        # Update window title
+        self.root.title('Update Parameters')
+        # Cteate a local function to enable buttons from the settings frame.
+        self.enable_buttons = buttons
+        # Create location variables
+        x = int(self.root.winfo_screenwidth()/2 - 150)
+        y = int(self.root.winfo_screenheight()/2 - 60)
+        # Resize window
+        self.root.geometry(f'300x120+{x}+{y}')
+        # Update on close protocol so the setting buttons are also re-enabled.
+        self.root.protocol('WM_DELETE_WINDOW', self.on_close)
+        # Set style
+        self.set_style()
+        # Create and place widgets in window
+        self.create_window()
+        # Load current configurations
+        self.get_current_parameters()
+        # Force focus on window
+        self.root.focus_force()
+    
+    def get_current_parameters(self) -> list:
+        '''Get the current parameters in the config file'''
+        with open('config.json', 'r') as file:
+            data = json.loads(file.read())
+            mileage = data["max_mileage"]
+            uom = data["uom"]
+        return [mileage, uom]
+
+    def create_window(self) -> None:
+        '''Create and place all widgets for the window.'''
+        # Get config information
+        data = self.get_current_parameters()
+        # Create and place labels
+        uom = ttk.Label(self.root, text='UOM').place(
+            x=10, y=10, width=125, height=30)
+        mileage_limit = ttk.Label(self.root, text='Cleaning Limit').place(
+            x=10, y=45, width=125, height=30
+        )
+        # Create list of acceptable unit of measuremetns
+        self.uom_list = ['','Feet','Meters']
+        # Create a variable for unit of measurements
+        self.uom_var = tk.StringVar(self.root)
+        # Update variable based on data from config json.
+        if data[1] == 'Feet':
+            self.uom_var.set(self.uom_list[1])
+        elif data[1] == 'Meters':
+            self.uom_var.set(self.uom_list[2])
+        # Create uom drop down and mileage limit entry
+        self.uom = ttk.OptionMenu(self.root, self.uom_var, *self.uom_list)
+        self.mileage = ttk.Entry(self.root, font=(None, 14))
+        # Place widgets
+        self.uom.place(x=145, y=10, width=145, height=30)
+        self.mileage.place(x=145, y=45, width=145, height=30)
+        # Create and place button
+        save_btn = ttk.Button(
+            self.root, text='Update', command=self.save_parameters
+        )
+        save_btn.place(x=75, y=75, width=150, height=40)
+
+    def set_style(self) -> None:
+        '''Update styling for the window.'''
+        # Create a instance of the style class
+        style = ttk.Style(self.root)
+        # Change font size
+        style.configure('.', font=(None, 14))
+
+    def save_parameters(self) -> None:
+        '''Update parameters in configureation json file.'''
+        # Create local variables from input widgets while stripping
+        # the placement seperators from mileage
+        mileage = self.mileage.get().replace(',','')
+        uom = self.uom_var.get()
+        # Create a blank variable to save dict from json
+        data = None
+        # Check if mileage is numeric and if uom is in the given list
+        if mileage.isdigit() and uom in self.uom_list:
+            # Open and copy config information as a local dict
+            with open('config.json', 'r') as file:
+                data = json.loads(file.read())
+                # Update dict with current configurations
+                data["max_mileage"] = int(mileage)
+                data["uom"] = uom
+            # Open config file and clear it out to insert new information
+            with open('config.json', 'w') as file:
+                file.write(str(json.dumps(data)))
+            # Display confirmation.
+            messagebox.showinfo(
+                title='Configurations Updated',
+                message='Configuration values have been updated.'
+            )
+            # Close window after saving values.
+            self.on_close()
+        else:
+            # Display error message if updating configuration values fail.
+            messagebox.showerror(
+                title='Error Saving Configurations',
+                message='There were issues updating the configurations.'
+            )
+            self.on_close()
+
+    def on_close(self) -> None:
+        '''Actions to be taken when the close button is pressed.'''
+        try:
+            # Try to enable buttons and destory window
+            self.enable_buttons()
+            self.root.destroy()
+        except Exception:
+            # In the event the application was closed first, continue to
+            # Destory this window. 
+            self.root.destroy()
+
+class Data:
+    pass

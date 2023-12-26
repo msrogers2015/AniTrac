@@ -35,7 +35,7 @@ class Dashboard:
         # Confirm the user wants to reset the mileage for the selected anilox
         flag = messagebox.askokcancel(
             title='Clean Anilox?',
-            message=f'Are you sure you want to reset milage for' \
+            message=f'Are you sure you want to reset mileage for' \
                 f' roller {anilox}?'
         )
         # If flag is true, reset mileage for anilox roller.
@@ -68,7 +68,7 @@ class Dashboard:
             data = json.loads(file.read())
             # Create a limit variable to hi-lite roller over or near cleaning
             # limit
-            self.limit = data["max_milage"]
+            self.limit = data["max_mileage"]
 
     def style_table(self) -> None:
         """Create custom style for table"""
@@ -224,13 +224,13 @@ class SQL:
         return data
     
     def clean_anilox(self, roller) -> bool or str:
-        '''Reset milage for anilox after being cleaned.'''
+        '''Reset mileage for anilox after being cleaned.'''
         # Create sql statement
-        sql = '''UPDATE anilox SET milage = 0 WHERE roller = ?'''
+        sql = '''UPDATE anilox SET mileage = 0 WHERE roller = ?'''
         # Connect to database
         self.connect()
         try:
-            # Reset milage
+            # Reset mileage
             self.cur.execute(sql, (roller,))
         # Catch exception and return information to the end user
         except Exception as e:
