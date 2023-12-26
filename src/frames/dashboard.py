@@ -69,6 +69,7 @@ class Dashboard:
             # Create a limit variable to hi-lite roller over or near cleaning
             # limit
             self.limit = data["max_mileage"]
+            self.uom = data["uom"]
 
     def style_table(self) -> None:
         """Create custom style for table"""
@@ -110,7 +111,7 @@ class Dashboard:
             yscrollcommand=self.yscroll.set, selectmode="extended"
         )
         # Define columns
-        self.table["columns"] = ("Anilox", "LPI", "BCM", "Feet")
+        self.table["columns"] = ("Anilox", "LPI", "BCM", self.uom)
         # Set a column width to evenly space all records.
         col_width = int((width - 20) / 5)
         # Create phantom column

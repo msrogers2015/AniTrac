@@ -2,6 +2,7 @@ import tkinter as tk
 import os
 import json
 import sqlite3
+from datetime import date
 from tkinter import ttk, filedialog, messagebox
 from ttkwidgets.autocomplete import AutocompleteCombobox
 
@@ -21,7 +22,7 @@ class Settings:
         y = [50, 135, 220] # add 330 if a forth row is needed
         # Create label list for buttons and map them to the coorect function.
         labels = ['Load Anilox', 'Add Anilox', 'Delete Anilox',
-                  'Set Parameters', 'Load Data', 'Export Data']
+                  'Set Parameters', 'Load Database', 'Export Database']
         functions = [self.load_anilox, self.new_anilox, self.delete_anilox,
                      self.update_params, self.import_data, self.export_data]
         # Create a counter to select label and function from list
@@ -121,10 +122,10 @@ class Settings:
         self.toplevel = Parameters(self.enable_buttons)
 
     def import_data(self) -> None:
-        print('Change look r')
+        import_data = Data('Import')
 
     def export_data(self) -> None:
-        print('Report')
+        import_data = Data('Export')
 
 class SQL:
     def __init__(self) -> None:
@@ -146,15 +147,23 @@ class SQL:
         # Close connection to database
         self.con.close()
 
-    def add_anilox(self, roller, lpi, bcm) -> str or bool:
+    def add_anilox(self, roller, lpi, bcm, mileage=0) -> str or bool:
         '''Add a new anilox to the database to track mileage.'''
         # Connect to database
         self.connect()
         # Create sql query to insert values into database
-        sql = 'INSERT INTO anilox(roller, lpi, bcm) values(?,?,?)'
+        if mileage != 0:
+            sql = '''
+                INSERT INTO anilox(roller, lpi, bcm, mileage) values(?,?,?,?)
+            '''
+        else:
+            sql = 'INSERT INTO anilox(roller, lpi, bcm) values(?,?,?)'
         try:
             # Try to insert record into database
-            self.cur.execute(sql, (roller, lpi, bcm))
+            if mileage != 0:
+                self.cur.execute(sql, (roller, lpi, bcm, mileage))
+            else:
+                self.cur.execute(sql, (roller, lpi, bcm))
         # Catch any exeptions to display to end user and disconnect from the
         # database
         except Exception as e:
@@ -193,6 +202,15 @@ class SQL:
         self.disconnect()
         # Create a list of the anilox after extracting them from the tuples.
         return [record[0] for record in data]
+    
+    def dump_data(self) -> list:
+        '''Dump data from database.'''
+        # Connect to database
+        self.connect()
+        # SQL statement
+        sql = 'SELECT * FROM anilox'
+        data = self.cur.execute(sql).fetchall()
+        return [record for record in data]
 
 class Anilox:
     def __init__(self, buttons) -> None:
@@ -405,6 +423,7 @@ class Parameters:
     
     def get_current_parameters(self) -> list:
         '''Get the current parameters in the config file'''
+        # Open config.json and cache values
         with open('config.json', 'r') as file:
             data = json.loads(file.read())
             mileage = data["max_mileage"]
@@ -495,4 +514,78 @@ class Parameters:
             self.root.destroy()
 
 class Data:
-    pass
+    def __init__(self, report_type) -> None:
+        '''
+            Save information from database or import information into database.
+        '''
+        # Create an instance of the sql class
+        self.sql = SQL()
+        # Specify report type.
+        self.report = report_type
+        self.select_file()
+
+    def select_file(self) -> None:
+        '''Select file to import or create export file.'''
+        # Create date variable for file name
+        date_stamp = str(date.today())
+        # Update title for file dialog
+        title = f'{self.report} Data'
+        # Create a list of acceptable file types to look for.
+        file_types = (('CSV','*.csv'), ('All Files','*.*'))
+        if self.report == 'Import':
+            file = filedialog.askopenfile(filetypes=file_types, title=title)
+        else:
+            file = filedialog.asksaveasfile(
+                filetypes=file_types,
+                defaultextension='.csv',
+                initialfile=f'anitrac_{date_stamp}',
+                title=title
+            )
+        if file != None:
+            if self.report == "Import":
+                self.import_data(file.name)
+            else:
+                self.export_data(file.name)
+    
+    def export_data(self, path) -> None:
+        '''
+            Save database information for user to import in case of corruption
+            or updates
+        '''
+        # Grab data from database
+        data = self.sql.dump_data()
+        # Open file to dump data
+        with open(path, 'w') as file:
+            file.write('Roller, LPI, BCM, Mileage\n')
+            for record in data:
+                roller, lpi, bcm, mileage = record
+                file.write(f'{roller},{lpi},{bcm},{mileage}\n')
+
+    def import_data(self, path) -> None:
+        '''Import data into database from output file.'''
+        # Create a list variable
+        data = []
+        failures = []
+        # Open file and insert records into list
+        with open(path, 'r') as file:
+            for record in file.readlines()[1:]:
+                roller, lpi, bcm, mileage = record.split(',')
+                status = self.sql.add_anilox(roller, lpi, bcm, mileage)
+                if status:
+                    continue
+                else:
+                    failures.append(roller)
+        if len(failures) > 0:
+            message = 'There was an issue adding the following rollers:\n\n'
+            for roller in failures:
+                message += f'- {roller}\n'
+            messagebox.showerror(
+                title='Error Adding Rollers',
+                message=message
+            )
+        else:
+            messagebox.showinfo(
+                title='Data Successfully Loaded',
+                message='Anilox successfully added to database.'
+            )
+            
