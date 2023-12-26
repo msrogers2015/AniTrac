@@ -2,6 +2,7 @@ import tkinter as tk
 import os
 import sqlite3
 from tkinter import ttk, filedialog, messagebox
+from ttkwidgets.autocomplete import AutocompleteCombobox
 
 class Settings:
     def __init__(self, frame) -> None:
@@ -19,9 +20,9 @@ class Settings:
         y = [50, 135, 220] # add 330 if a forth row is needed
         # Create label list for buttons and map them to the coorect function.
         labels = ['Load Anilox', 'Add Anilox', 'Delete Anilox',
-                  'Set Parameters', 'Visual Apperance', 'Anilox Report']
+                  'Set Parameters', 'Load Data', 'Export Data']
         functions = [self.load_anilox, self.new_anilox, self.delete_anilox,
-                     self.update_params, self.change_apperance, self.report]
+                     self.update_params, self.import_data, self.export_data]
         # Create a counter to select label and function from list
         count = 0
         # Create a list to place the buttons into. 
@@ -104,20 +105,22 @@ class Settings:
         '''Add a new anilox to the list.'''
         # Disable all buttons so other windows cannot be opened.
         self.disable_buttons()
-        self.toplevel = Anilox('New Anilox', self.enable_buttons)
+        self.toplevel = Anilox(self.enable_buttons)
         
     def delete_anilox(self) -> None:
-        print('Delete anilox')
+        '''Remove anilox from database.'''
+        # Disable all buttons so the other windows cannot be opened.
+        self.disable_buttons()
+        self.toplevel = Delete(self.enable_buttons)
 
     def update_params(self) -> None:
         print('Update parameters')
 
-    def change_apperance(self) -> None:
+    def import_data(self) -> None:
         print('Change look r')
 
-    def report(self) -> None:
+    def export_data(self) -> None:
         print('Report')
-
 
 class SQL:
     def __init__(self) -> None:
@@ -157,16 +160,45 @@ class SQL:
         self.con.commit()
         self.disconnect()
         return True
+    
+    def delete_anilox(self, roller) -> bool:
+        '''Remove anilox from database'''
+        # Connect to database
+        self.connect()
+        # SQL query to remove anilox roller from database.
+        sql = '''DELETE FROM anilox WHERE roller = ?'''
+        try:
+            # Remove anilox from database
+            self.cur.execute(sql, (roller,))
+            self.con.commit()
+        except Exception as e:
+            # Catch and display exception
+            print(e)
+            return False
+        return True
+    
+    def get_anilox_list(self) -> list:
+        '''Get a list of all anilxo in the database.'''
+        # Connect to database
+        self.connect()
+        # Create sql statement to get all anilox information fromd database.
+        sql = '''SELECT roller FROM anilox'''
+        # Execute query
+        data = self.cur.execute(sql).fetchall()
+        # Disconnect from database
+        self.disconnect()
+        # Create a list of the anilox after extracting them from the tuples.
+        return [record[0] for record in data]
 
 class Anilox:
-    def __init__(self, title, buttons) -> None:
-        '''Create a top level window to interact with anilox.'''
+    def __init__(self, buttons) -> None:
+        '''Create a top level window to add new anilox to database.'''
         # Create window
         self.root = tk.Tk()
         # Create an instance of the sql class
         self.sql = SQL()
         # Update window title
-        self.root.title(title)
+        self.root.title('New Anilox')
         # Create a local function to enable buttons from the settings frame.
         self.enable_buttons = buttons
         # Create location variables
@@ -180,6 +212,8 @@ class Anilox:
         self.set_style()
         # Create and place widets in the window
         self.create_window()
+        # Force focus on widnow
+        self.root.focus_force()
 
     def set_style(self) -> None:
         '''Update styling for the window.'''
@@ -256,5 +290,85 @@ class Anilox:
             self.root.destroy()
 
 class Delete:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, buttons) -> None:
+        '''Create a top level window to remove anilox from database.'''
+        # Create windwo
+        self.root = tk.Tk()
+        # Create an instance of the sql class
+        self.sql = SQL()
+        # Update window title
+        self.root.title('Delete Anilox')
+        # Cteate a local function to enable buttons from the settings frame.
+        self.enable_buttons = buttons
+        # Create location variables
+        x = int(self.root.winfo_screenwidth()/2 - 150)
+        y = int(self.root.winfo_screenheight()/2 - 60)
+        # Resize window
+        self.root.geometry(f'300x120+{x}+{y}')
+        # Update on close protocol so the setting buttons are also re-enabled.
+        self.root.protocol('WM_DELETE_WINDOW', self.on_close)
+        # Set style
+        self.set_style()
+        # Create and place widgets in window
+        self.create_window()
+        # Force focus on window
+        self.root.focus_force()
+    
+    def set_style(self) -> None:
+        '''Update styling for the window.'''
+        # Create a instance of the style class
+        style = ttk.Style(self.root)
+        # Change font size
+        style.configure('.', font=(None, 14))
+
+    def create_window(self) -> None:
+        '''Create and place all widgets for the window.'''
+        # Create and place label 
+        self.anilox = ttk.Label(self.root, text='Select Anilox')
+        self.anilox.place(x=10, y=10, width=125, heigh=30)
+        # Create drop down list for anilox selection
+        self.anilox_list = AutocompleteCombobox(
+            self.root, font=(None, 14),
+            completevalues= ['']  + self.sql.get_anilox_list()
+        )
+        # Change font of items in drop down menu
+        self.anilox_list.place(x=135, y=10, width=150, height=30)
+        # Create delete button
+        self.delete_btn = ttk.Button(
+            self.root, text='Delete', command=self.delete_anilox)
+        self.delete_btn.place(x=75, y=50, width=150, height=40)
+        
+    def delete_anilox(self) -> None:
+        '''Delete an anilox from the database'''
+        # Check if the entered anilox is part of the list
+        if self.anilox_list.get() in self.sql.get_anilox_list():
+            if self.sql.delete_anilox(self.anilox_list.get()):
+                messagebox.showinfo(
+                    title='Anilox Removed',
+                    message=f'{self.anilox_list.get()} successfully deleted.'
+                )
+                self.on_close()
+            else:
+                messagebox.showerror(
+                    title="Error Removing Anilox",
+                    message=f"Error removing {self.anilox_list.get()}."
+                )
+                self.on_close()
+        else:
+            messagebox.showwarning(
+                title='Incorrect Information',
+                message=f'{self.anilox_list.get()} couldn\'t be found.'
+            )
+            self.on_close()
+
+    def on_close(self) -> None:
+        '''Actions to be taken when the close button is pressed.'''
+        try:
+            # Try to enable buttons and destory window
+            self.enable_buttons()
+            self.root.destroy()
+        except Exception:
+            # In the event the application was closed first, continue to
+            # Destory this window. 
+            self.root.destroy()
+
