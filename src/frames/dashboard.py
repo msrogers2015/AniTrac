@@ -31,35 +31,41 @@ class Dashboard:
         # Get the current selection via focus method. From there, get the
         # record information via the item method for tkitner treeview. Lastly,
         # strip out just the values from the dict.
-        anilox = self.table.item(self.table.focus())["values"][0]
-        # Confirm the user wants to reset the mileage for the selected anilox
-        flag = messagebox.askokcancel(
-            title="Clean Anilox?",
-            message="Are you sure you want to reset mileage for" /
-            f" roller {anilox}?",
-        )
-        # If flag is true, reset mileage for anilox roller.
-        if flag:
-            # Run cleaning function. If true, display confirmation.
-            cleaned = self.sql.clean_anilox(anilox)
-            # If cleaning doesn't have any issues, display success message.
-            if cleaned:
-                messagebox.showinfo(
-                    title="Mileage Cleared",
-                    message=f"Mileage for roller {anilox} has been reset.",
-                )
-            # If cleaning failed, display error message
-            else:
-                messagebox.showerror(
-                    title="Error Clearing Mileage",
-                    message=f"The following error occured:\n\n{flag}",
-                )
-        # If flag is false, do nothing. A false flag means the user clicked
-        # cancel
-        elif not flag:
-            pass
-        # Update the table
-        self.update_table()
+        try:
+            anilox = self.table.item(self.table.focus())["values"][0]
+            # Confirm the user wants to reset the mileage for the selected anilox
+            flag = messagebox.askokcancel(
+                title="Clean Anilox?",
+                message="Are you sure you want to reset mileage for" \
+                f" roller {anilox}?",
+            )
+            # If flag is true, reset mileage for anilox roller.
+            if flag:
+                # Run cleaning function. If true, display confirmation.
+                cleaned = self.sql.clean_anilox(anilox)
+                # If cleaning doesn't have any issues, display success message.
+                if cleaned:
+                    messagebox.showinfo(
+                        title="Mileage Cleared",
+                        message=f"Mileage for roller {anilox} has been reset.",
+                    )
+                # If cleaning failed, display error message
+                else:
+                    messagebox.showerror(
+                        title="Error Clearing Mileage",
+                        message=f"The following error occured:\n\n{flag}",
+                    )
+            # If flag is false, do nothing. A false flag means the user clicked
+            # cancel
+            elif not flag:
+                pass
+            # Update the table
+            self.update_table()
+        except IndexError:
+            messagebox.showwarning(
+                title='Invalid Selection',
+                message='No anilox was selected for cleaning.'
+            )
 
     def load_json(self) -> None:
         """Create variables based on the config file."""
@@ -196,7 +202,7 @@ class SQL:
     def __init__(self) -> None:
         """Initialize class for database queries"""
         # Create a variable for the database
-        self.db = os.path.join(os.getcwd(), "anitrac.db")
+        self.db = os.path.join(os.getcwd(), "test.db")
 
     def connect(self) -> None:
         """Establish connection to database."""

@@ -106,7 +106,7 @@ class SQL:
     def __init__(self) -> None:
         """Initialize class for database queries"""
         # Create a variable for the database
-        self.db = os.path.join(os.getcwd(), "anitrac.db")
+        self.db = os.path.join(os.getcwd(), "test.db")
 
     def connect(self) -> None:
         """Establish connection to database."""

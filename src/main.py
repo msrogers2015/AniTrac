@@ -11,7 +11,7 @@ class App:
         self.root = tk.Tk()
         # Create size and location variables
         self.width = 600
-        height = 400
+        height = 425
         x = int((self.root.winfo_screenwidth() / 2) - (self.width / 2))
         y = int((self.root.winfo_screenheight() / 2) - (height / 2))
         # Resize application window and center in screen
@@ -26,6 +26,8 @@ class App:
         # Adjust padding for tabs to make them more visually appealing.
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.create_tabs()
+        # Add menu
+        self.create_menu()
 
     def create_style(self) -> None:
         """Change style of tkinter notebook"""
@@ -79,6 +81,41 @@ class App:
         except Exception:
             # If no toplevel windows exist, exit application.
             self.root.destroy()
+    
+    def create_menu(self) -> None:
+        '''Create menu bar for quick access to certain features.'''
+        # Create menubar and add it to application
+        menubar = tk.Menu(self.root)
+        # Create a sub menu to add to the main menubar
+        filemenu = tk.Menu(menubar, tearoff=0)
+        # Create quick action to open help file
+        filemenu.add_command(
+            label="Help", command=self.help_window, font=(None, 12)
+        )
+        # Add a seperator to group like quick commands
+        filemenu.add_separator()
+        # Add the ability to import and export database
+        filemenu.add_command(
+            label="Load Database", command=self.settings_gui.import_data,
+            font=(None, 12)
+        )
+        filemenu.add_command(
+            label="Export Database", command=self.settings_gui.export_data,
+            font=(None, 12)
+        )
+        # Add a seperator to group like commands
+        filemenu.add_separator()
+        # Add application close quick action
+        filemenu.add_command(
+            label="Exit", command=self.on_close, font=(None, 12)
+        )
+        # Add sub-menu to application main menu
+        menubar.add_cascade(label="File", menu=filemenu, font=(None, 12))
+        # Add menu to application
+        self.root.config(menu=menubar)
+
+    def help_window(self) -> None:
+        print('Testing')
 
 
 # Run application if this file is used as the main file
