@@ -75,8 +75,9 @@ class Record:
 
     def add_mileage(self) -> None:
         """Increase mileage for anilox rollers."""
+        additional_mileage = self.mileage_entry.get().replace(',','')
         # If mileage is a whole number, continue with function
-        if self.mileage_entry.get().isdigit():
+        if additional_mileage.isdigit():
             # Create a count variable to empty drop down menus.
             count = 0
             # Loop through rollers
@@ -84,7 +85,7 @@ class Record:
                 # If roller entry isn't empty, update mileage
                 if roller.get() != "":
                     self.sql.add_mileage(
-                        roller.get(), self.mileage_entry.get()
+                        roller.get(), additional_mileage
                     )
                     # Reset drop down menu to be blank
                     roller.set("")

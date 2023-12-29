@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import time
+import webbrowser
 from frames import dashboard, settings, record
 
 
@@ -115,7 +116,8 @@ class App:
         self.root.config(menu=menubar)
 
     def help_window(self) -> None:
-        print('Testing')
+        '''Guide user to help document on github.'''
+        webbrowser.open('https://github.com/msrogers2015/AniTrac/blob/main/README.md')
 
 
 # Run application if this file is used as the main file
