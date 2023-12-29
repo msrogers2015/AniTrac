@@ -18,43 +18,45 @@ class Dashboard:
         self.style_table()
 
     def create_buttons(self, width):
-        '''Create buttons for the dashboard to clean anilox rollers.'''
+        """Create buttons for the dashboard to clean anilox rollers."""
         # Create clean button
         clean_btn = ttk.Button(
-            self.frame, text='Clean Anilox', command=self.clean
+            self.frame, text="Clean Anilox", command=self.clean
         )
         # Place clean button
-        clean_btn.place(x=(width-300)/2, y=315, width=300, height=45)
-    
-    def clean(self):
-        '''Reset the mileage for anilox rollers that have been cleaned.'''
+        clean_btn.place(x=(width - 300) / 2, y=315, width=300, height=45)
+
+    def clean(self) -> None:
+        """Reset the mileage for anilox rollers that have been cleaned."""
         # Get the current selection via focus method. From there, get the
         # record information via the item method for tkitner treeview. Lastly,
         # strip out just the values from the dict.
-        anilox = self.table.item(self.table.focus())['values'][0]
+        anilox = self.table.item(self.table.focus())["values"][0]
         # Confirm the user wants to reset the mileage for the selected anilox
         flag = messagebox.askokcancel(
-            title='Clean Anilox?',
-            message=f'Are you sure you want to reset mileage for' \
-                f' roller {anilox}?'
+            title="Clean Anilox?",
+            message="Are you sure you want to reset mileage for" /
+            f" roller {anilox}?",
         )
         # If flag is true, reset mileage for anilox roller.
         if flag:
             # Run cleaning function. If true, display confirmation.
             cleaned = self.sql.clean_anilox(anilox)
+            # If cleaning doesn't have any issues, display success message.
             if cleaned:
                 messagebox.showinfo(
-                    title='Mileage Cleared',
-                    message=f'Mileage for roller {anilox} has been reset.'
+                    title="Mileage Cleared",
+                    message=f"Mileage for roller {anilox} has been reset.",
                 )
+            # If cleaning failed, display error message
             else:
                 messagebox.showerror(
-                    title='Error Clearing Mileage',
-                    message=f'The following error occured:\n\n{flag}'
+                    title="Error Clearing Mileage",
+                    message=f"The following error occured:\n\n{flag}",
                 )
         # If flag is false, do nothing. A false flag means the user clicked
         # cancel
-        elif flag == False:
+        elif not flag:
             pass
         # Update the table
         self.update_table()
@@ -76,7 +78,6 @@ class Dashboard:
         # Color pallet
         green = "#79B43C"
         gray = "#C2C2C2"
-        blue = "#289CCD"
         red = "#e4002b"
         yellow = "#fce300"
         # Create instance of style object
@@ -144,7 +145,7 @@ class Dashboard:
         for original_record in records:
             # Break down the tuple to convert to list and format the mileage
             anilox, lpi, bcm, mileage = original_record
-            record = [anilox, lpi,bcm, '{:,}'.format(mileage)]
+            record = [anilox, lpi, bcm, "{:,}".format(mileage)]
             # Check if record is above the specified limit
             if mileage > self.limit:
                 self.table.insert(
@@ -168,14 +169,14 @@ class Dashboard:
             # even, set the row color to the even tag
             elif count % 2 == 0:
                 self.table.insert(
-                    parent="", index="end", iid=count, values=record,
-                    tags=("even",)
+                    parent="", index="end", iid=count,
+                    values=record, tags=("even",)
                 )
             # Else, set the odd rows color to the odd tag.
             else:
                 self.table.insert(
-                    parent="", index="end", iid=count, values=record,
-                    tags=("odd",)
+                    parent="", index="end", iid=count,
+                    values=record, tags=("odd",)
                 )
             # Increase count by one to prevent iid from having two records with
             # the same id as well as keep the alternating pattern going.
@@ -195,7 +196,7 @@ class SQL:
     def __init__(self) -> None:
         """Initialize class for database queries"""
         # Create a variable for the database
-        self.db = os.path.join(os.getcwd(), "test.db")
+        self.db = os.path.join(os.getcwd(), "anitrac.db")
 
     def connect(self) -> None:
         """Establish connection to database."""
@@ -223,11 +224,11 @@ class SQL:
         self.disconnect()
         # Return data list for the parent function to use.
         return data
-    
+
     def clean_anilox(self, roller) -> bool or str:
-        '''Reset mileage for anilox after being cleaned.'''
+        """Reset mileage for anilox after being cleaned."""
         # Create sql statement
-        sql = '''UPDATE anilox SET mileage = 0 WHERE roller = ?'''
+        sql = """UPDATE anilox SET mileage = 0 WHERE roller = ?"""
         # Connect to database
         self.connect()
         try:
@@ -238,7 +239,7 @@ class SQL:
             self.disconnect()
             return str(e)
         # If no errors, save changed to the databse and disconnect. Return True
-        # for the flag. 
+        # for the flag.
         self.con.commit()
         self.disconnect()
         return True
