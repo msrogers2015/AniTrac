@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import time
 from frames import dashboard, settings, record
 
 
@@ -18,12 +19,13 @@ class App:
         self.root.resizable(0, 0)
         # Update application window title
         self.root.title("AniTrac")
+        # Set icon
+        self.root.iconbitmap('anitrac.ico')
         # Set style
         self.create_style()
         # Adjust padding for tabs to make them more visually appealing.
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.create_tabs()
-        self.root.mainloop()
 
     def create_style(self) -> None:
         """Change style of tkinter notebook"""
@@ -82,4 +84,9 @@ class App:
 # Run application if this file is used as the main file
 if __name__ == "__main__":
     # Create an instance of the applicaiton
-    app = App()
+    try:
+        app = App()
+        app.root.mainloop()
+    except Exception as e:
+        print(e)
+        time.sleep(2)
