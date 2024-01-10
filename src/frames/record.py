@@ -21,6 +21,13 @@ class Record:
         # Change font
         style.config(".", font=(None, 14))
 
+    def clear_window(self) -> None:
+        '''Clear widgets from frame.'''
+        # Loop through widgets within frame
+        for child in self.frame.winfo_children():
+            # Destroy widget
+            child.destroy()
+
     def create_window(self, width) -> None:
         """Create and add widgets to record anilox mileages"""
         # Create label and place

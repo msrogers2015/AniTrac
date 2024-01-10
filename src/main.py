@@ -69,9 +69,16 @@ class App:
     def on_tab_changed(self, event) -> None:
         """Actions to be taken when tab change event happens."""
         # If the index of the tab is one, update the table data in the
-        # dashboard
+        # dashboard and destroy all widgets in record frame
         if self.notebook.index(self.notebook.select()) == 0:
+            self.record_gui.clear_window()
             self.dashboard_gui.update_table()
+        # If index of the tab is two, create widgets and place in record frame
+        if self.notebook.index(self.notebook.select()) == 1:
+            self.record_gui.create_window(self.width)
+        # If index of tab is three, destory widgets in record frame.
+        if self.notebook.index(self.notebook.select()) == 2:
+            self.record_gui.clear_window()
 
     def on_close(self) -> None:
         """Ensure all sub-windows are closed upon exiting the application"""

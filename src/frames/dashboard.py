@@ -13,6 +13,7 @@ class Dashboard:
         self.sql = SQL()
         # Load variables from config file
         self.load_json()
+        print(self.limit)
         self.create_table(width)
         self.create_buttons(width)
         self.style_table()

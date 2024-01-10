@@ -1,0 +1,6 @@
+v1.0.0
+- Initial release
+
+v1.0.1
+- Fixed bug where new anilox added during runtime would not be selectable in 
+    the record mileage dropdown.
